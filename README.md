@@ -1,3 +1,7 @@
+# Experimental repo
+
+See [DEVNOTES.md](DEVNOTES.md) for more info!
+
 # Libfuzzer for libpng
 
 This folder contains an example fuzzer for libpng, using LLMP for fast multi-process fuzzing and crash detection.
