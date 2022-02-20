@@ -13,6 +13,11 @@ Roadmap for the dummy stage:
 - [ ] Implement coverage reporting
 - [ ] Support standalone harness? (something is fucky with libfuzzer: https://groups.google.com/g/libfuzzer/c/oV3Hp4IGx7Y )
 
+Usage
+-----
+
+Clone this to the `fuzzers` directory of LibAFL!
+
 Research notes
 --------------
 
