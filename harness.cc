@@ -1,5 +1,10 @@
 #include <stdint.h>
 #include <cstdio>
+#include <stdbool.h>
+
+#include "afl.h"
+
+bool afl;
 
 
 static int LLVMTestOneInput(const uint8_t* data, size_t size) {
