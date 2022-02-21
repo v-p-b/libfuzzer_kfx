@@ -12,6 +12,7 @@ use libafl::{
         current_nanos,
         rands::StdRand,
         tuples::{tuple_list, Merge},
+        shmem::{ShMem, ShMemProvider, StdShMemProvider},
     },
     corpus::{
         Corpus, InMemoryCorpus, IndexesLenTimeMinimizerCorpusScheduler, OnDiskCorpus,
@@ -26,7 +27,7 @@ use libafl::{
     monitors::MultiMonitor,
     mutators::scheduled::{havoc_mutations, tokens_mutations, StdScheduledMutator},
     mutators::token_mutations::Tokens,
-    observers::{HitcountsMapObserver, StdMapObserver, TimeObserver},
+    observers::{HitcountsMapObserver, ConstMapObserver, TimeObserver},
     stages::{
         calibrate::CalibrationStage,
         power::{PowerMutationalStage, PowerSchedule},
@@ -37,6 +38,7 @@ use libafl::{
 
 use libafl_targets::{libfuzzer_initialize, libfuzzer_test_one_input, EDGES_MAP, MAX_EDGES_NUM};
 
+const MAP_SIZE: usize = 65536;
 /// The main fn, `no_mangle` as it is a C main
 #[cfg(not(test))]
 #[no_mangle]
@@ -77,8 +79,19 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, broker_port: u16) -> Re
         };
 
     // Create an observation channel using the coverage map
-    let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
-    let edges_observer = HitcountsMapObserver::new(StdMapObserver::new("edges", edges));
+    //let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
+
+    //Coverage map shared between observer and executor
+    let mut shmem = StdShMemProvider::new().unwrap().new_map(MAP_SIZE).unwrap();
+    //let the forkserver know the shmid
+    shmem.write_to_env("__AFL_SHM_ID").unwrap();
+    let shmem_map = shmem.map_mut();
+
+    // Create an observation channel using the signals map
+    let edges_observer = HitcountsMapObserver::new(ConstMapObserver::<_, MAP_SIZE>::new(
+        "shared_mem",
+        shmem_map,
+    ));
 
     // Create an observation channel to keep track of the execution time
     let time_observer = TimeObserver::new("time");
