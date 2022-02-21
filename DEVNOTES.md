@@ -37,4 +37,7 @@ Creating a LibFuzzer compatible harness is easy, as we only need to:
 
 By removing other santizers, we can get rid of LLVM's instrumentation, that will be useless with KF/x. The next task is to create a replacement for coverage tracking - this will hopefully be achievable by using the existing code from KF/x. 
 
+The `forkserver_simple` example [shows](https://github.com/AFLplusplus/LibAFL/blob/main/fuzzers/forkserver_simple/src/main.rs#L83) how to initialize a shared memory region, notify the harness about it, and use it with an Observer.
+
 To be continued...
+ 
