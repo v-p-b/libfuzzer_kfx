@@ -11,8 +11,10 @@ use libafl::{
     bolts::{
         current_nanos,
         rands::StdRand,
-        tuples::{tuple_list, Merge},
         shmem::{ShMem, ShMemProvider, StdShMemProvider},
+        tuples::{tuple_list, Merge},
+        AsSlice,
+        AsMutSlice,
     },
     corpus::{
         Corpus, InMemoryCorpus, IndexesLenTimeMinimizerCorpusScheduler, OnDiskCorpus,
@@ -27,7 +29,7 @@ use libafl::{
     monitors::MultiMonitor,
     mutators::scheduled::{havoc_mutations, tokens_mutations, StdScheduledMutator},
     mutators::token_mutations::Tokens,
-    observers::{HitcountsMapObserver, ConstMapObserver, TimeObserver},
+    observers::{ConstMapObserver, HitcountsMapObserver, StdMapObserver, TimeObserver},
     stages::{
         calibrate::CalibrationStage,
         power::{PowerMutationalStage, PowerSchedule},
@@ -39,6 +41,7 @@ use libafl::{
 use libafl_targets::{libfuzzer_initialize, libfuzzer_test_one_input, EDGES_MAP, MAX_EDGES_NUM};
 
 const MAP_SIZE: usize = 65536;
+
 /// The main fn, `no_mangle` as it is a C main
 #[cfg(not(test))]
 #[no_mangle]
@@ -80,18 +83,22 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, broker_port: u16) -> Re
 
     // Create an observation channel using the coverage map
     //let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
+    //let edges_observer = HitcountsMapObserver::new(StdMapObserver::new("edges", edges));
 
-    //Coverage map shared between observer and executor
-    let mut shmem = StdShMemProvider::new().unwrap().new_map(MAP_SIZE).unwrap();
-    //let the forkserver know the shmid
+    // The default, OS-specific privider for shared memory
+    let mut shmem_provider = StdShMemProvider::new().unwrap();
+    // The coverage map shared between observer and executor
+    let mut shmem = shmem_provider.new_shmem(MAP_SIZE).unwrap();
+    // let the forkserver know the shmid
     shmem.write_to_env("__AFL_SHM_ID").unwrap();
-    let shmem_map = shmem.map_mut();
+    let shmem_buf = shmem.as_mut_slice();
 
     // Create an observation channel using the signals map
     let edges_observer = HitcountsMapObserver::new(ConstMapObserver::<_, MAP_SIZE>::new(
         "shared_mem",
-        shmem_map,
+        shmem_buf,
     ));
+
 
     // Create an observation channel to keep track of the execution time
     let time_observer = TimeObserver::new("time");
@@ -131,7 +138,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, broker_port: u16) -> Re
 
     // Create a PNG dictionary if not existing
     if state.metadata().get::<Tokens>().is_none() {
-        state.add_metadata(Tokens::new(vec![
+        state.add_metadata(Tokens::from([
             vec![137, 80, 78, 71, 13, 10, 26, 10], // PNG header
             "IHDR".as_bytes().to_vec(),
             "IDAT".as_bytes().to_vec(),
