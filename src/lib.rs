@@ -54,16 +54,25 @@ pub fn libafl_main() {
         "Workdir: {:?}",
         env::current_dir().unwrap().to_string_lossy().to_string()
     );
+
+    // The default, OS-specific privider for shared memory
+    let mut shmem_provider = StdShMemProvider::new().unwrap();
+    // The coverage map shared between observer and executor
+    let mut shmem = shmem_provider.new_shmem(MAP_SIZE).unwrap();
+    // let the forkserver know the shmid
+    shmem.write_to_env("__AFL_SHM_ID").unwrap();
+    
     fuzz(
         &[PathBuf::from("./corpus")],
         PathBuf::from("./crashes"),
+        &mut shmem,
         1337,
     )
     .expect("An error occurred while fuzzing");
 }
 
 /// The actual fuzzer
-fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, broker_port: u16) -> Result<(), Error> {
+fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem, broker_port: u16) -> Result<(), Error> {
     // 'While the stats are state, they are usually used in the broker - which is likely never restarted
     let monitor = MultiMonitor::new(|s| println!("{}", s));
 
@@ -84,13 +93,6 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, broker_port: u16) -> Re
     // Create an observation channel using the coverage map
     //let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
     //let edges_observer = HitcountsMapObserver::new(StdMapObserver::new("edges", edges));
-
-    // The default, OS-specific privider for shared memory
-    let mut shmem_provider = StdShMemProvider::new().unwrap();
-    // The coverage map shared between observer and executor
-    let mut shmem = shmem_provider.new_shmem(MAP_SIZE).unwrap();
-    // let the forkserver know the shmid
-    shmem.write_to_env("__AFL_SHM_ID").unwrap();
     let shmem_buf = shmem.as_mut_slice();
 
     // Create an observation channel using the signals map
