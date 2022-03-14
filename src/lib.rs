@@ -126,7 +126,8 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
             // RNG
             StdRand::with_seed(current_nanos()),
             // Corpus that will be evolved, we keep it in memory for performance
-            InMemoryCorpus::new(),
+            //InMemoryCorpus::new(),
+            OnDiskCorpus::new(PathBuf::from("./gencorp")).unwrap(),
             // Corpus in which we store solutions (crashes in this example),
             // on disk so the user can get them after stopping the fuzzer
             OnDiskCorpus::new(objective_dir).unwrap(),
