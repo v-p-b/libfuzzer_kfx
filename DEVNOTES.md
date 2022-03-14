@@ -11,7 +11,7 @@ Roadmap for the dummy stage:
 - [x] Replace libpng harness with dummy
 - [x] Remove LibFuzzer instrumentation, while maintaining functional fuzzing entry point 
 - [ ] Implement coverage reporting
-- [ ] Support standalone harness? (something is fucky with libfuzzer: https://groups.google.com/g/libfuzzer/c/oV3Hp4IGx7Y )
+- [x] Support standalone harness? (something is fucky with libfuzzer: https://groups.google.com/g/libfuzzer/c/oV3Hp4IGx7Y )
 
 Usage
 -----
@@ -30,14 +30,13 @@ Based on the [RC3 talk](https://media.ccc.de/v/rc3-channels-2020-87-fuzzers-like
 
 The whole thing is glued together by exposing the TestOne entry point of the C implementation to LibAFL's Rust implementation (see [A little C with your Rust](https://docs.rust-embedded.org/book/interoperability/c-with-rust.html)).
 
-Creating a LibFuzzer compatible harness is easy, as we only need to:
-- implement the appropriate interface 
-- use Clang with the `fuzzer` sanitizer (TODO does KF/x have issues with Clang?)
-- link everything together with the LibAFL based fuzzer implementation (see the Makefile)
-
-By removing other santizers, we can get rid of LLVM's instrumentation, that will be useless with KF/x. The next task is to create a replacement for coverage tracking - this will hopefully be achievable by using the existing code from KF/x. 
-
 The `forkserver_simple` example [shows](https://github.com/AFLplusplus/LibAFL/blob/main/fuzzers/forkserver_simple/src/main.rs#L83) how to initialize a shared memory region, notify the harness about it, and use it with an Observer.
+
+The current version uses LibAFL's `libfuzzer_target` for compatibility reasons, otherwise LLVM instrumentation is not in use. The executable entry point is defined by LibAFL's `libfuzzer_target` instead of the one provided by the LLVM fuzzer sanitizer - this needed some serious hacking with the Makefile - we'll probably want something more robust for building. 
+
+The original libpng fuzzer code is slowly going away:
+* There is code for am `ShMem` based `HitcountsMapObserver`, and the AFL area seems to set up correctly, but coverage tracking is still buggy.
+* We are using a SimpleEventManager instead of the `setup restarting_mgr_std()` helper.
 
 To be continued...
  
