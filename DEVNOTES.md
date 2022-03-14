@@ -35,7 +35,7 @@ The `forkserver_simple` example [shows](https://github.com/AFLplusplus/LibAFL/bl
 The current version uses LibAFL's `libfuzzer_target` for compatibility reasons, otherwise LLVM instrumentation is not in use. The executable entry point is defined by LibAFL's `libfuzzer_target` instead of the one provided by the LLVM fuzzer sanitizer - this needed some serious hacking with the Makefile - we'll probably want something more robust for building. 
 
 The original libpng fuzzer code is slowly going away:
-* There is code for am `ShMem` based `HitcountsMapObserver`, and the AFL area seems to set up correctly, but coverage tracking is still buggy.
+* There is code for am `ShMem` based `HitcountsMapObserver`, and the AFL area seems to set up correctly, but reporting on objectives is buggy.
 * We are using a SimpleEventManager instead of the `setup restarting_mgr_std()` helper.
 
 To be continued...
