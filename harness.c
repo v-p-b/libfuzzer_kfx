@@ -10,12 +10,13 @@ bool afl;
 int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   //afl_setup();
   afl_rewind();
-  afl_wait();
+  //afl_wait();
   if (size < 4) {
     afl_report(false);
     return 0;
   }
 
+  afl_instrument_location(0x223344);
   if (data[0] == 'l'){
     afl_instrument_location(0x11223344);
     if (data[1] == 'K'){

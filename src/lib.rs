@@ -20,7 +20,7 @@ use libafl::{
         Corpus, InMemoryCorpus, IndexesLenTimeMinimizerCorpusScheduler, OnDiskCorpus,
         PowerQueueCorpusScheduler,
     },
-    events::{setup_restarting_mgr_std, EventConfig, EventRestarter},
+    events::{EventConfig, SimpleEventManager},
     executors::{inprocess::InProcessExecutor, ExitKind, TimeoutExecutor},
     feedback_or, feedback_or_fast,
     feedbacks::{CrashFeedback, MapFeedbackState, MaxMapFeedback, TimeFeedback, TimeoutFeedback},
@@ -77,7 +77,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
     let monitor = MultiMonitor::new(|s| println!("{}", s));
 
     // The restarting state will spawn the same process again as child, then restarted it each time it crashes.
-    let (state, mut restarting_mgr) =
+    /*let (state, mut restarting_mgr) =
         match setup_restarting_mgr_std(monitor, broker_port, EventConfig::AlwaysUnique) {
             Ok(res) => res,
             Err(err) => match err {
@@ -89,7 +89,8 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
                 }
             },
         };
-
+    */
+    let mut event_mgr = SimpleEventManager::new(monitor);
     // Create an observation channel using the coverage map
     //let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
     //let edges_observer = HitcountsMapObserver::new(StdMapObserver::new("edges", edges));
@@ -121,8 +122,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
     let objective = feedback_or_fast!(CrashFeedback::new(), TimeoutFeedback::new());
 
     // If not restarting, create a State from scratch
-    let mut state = state.unwrap_or_else(|| {
-        StdState::new(
+    let mut state = StdState::new(
             // RNG
             StdRand::with_seed(current_nanos()),
             // Corpus that will be evolved, we keep it in memory for performance
@@ -133,13 +133,12 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
             // States of the feedbacks.
             // They are the data related to the feedbacks that you want to persist in the State.
             tuple_list!(feedback_state),
-        )
-    });
+        );
 
     println!("We're a client, let's fuzz :)");
 
     // Create a PNG dictionary if not existing
-    if state.metadata().get::<Tokens>().is_none() {
+    /*if state.metadata().get::<Tokens>().is_none() {
         state.add_metadata(Tokens::from([
             vec![137, 80, 78, 71, 13, 10, 26, 10], // PNG header
             "IHDR".as_bytes().to_vec(),
@@ -147,7 +146,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
             "PLTE".as_bytes().to_vec(),
             "IEND".as_bytes().to_vec(),
         ]));
-    }
+    }*/
 
     // Setup a basic mutator with a mutational stage
 
@@ -179,7 +178,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
             tuple_list!(edges_observer, time_observer),
             &mut fuzzer,
             &mut state,
-            &mut restarting_mgr,
+            &mut event_mgr,
         )?,
         // 10 seconds timeout
         Duration::new(10, 0),
@@ -195,11 +194,11 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
     // In case the corpus is empty (on first run), reset
     if state.corpus().count() < 1 {
         state
-            .load_initial_inputs(&mut fuzzer, &mut executor, &mut restarting_mgr, corpus_dirs)
+            .load_initial_inputs(&mut fuzzer, &mut executor, &mut event_mgr, corpus_dirs)
             .unwrap_or_else(|_| panic!("Failed to load initial corpus at {:?}", &corpus_dirs));
         println!("We imported {} inputs from disk.", state.corpus().count());
     }
-
+    println!("Gogogo!");
     // This fuzzer restarts after 1 mio `fuzz_one` executions.
     // Each fuzz_one will internally do many executions of the target.
     // If your target is very instable, setting a low count here may help.
@@ -209,13 +208,13 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
         &mut stages,
         &mut executor,
         &mut state,
-        &mut restarting_mgr,
+        &mut event_mgr,
         iters,
     )?;
 
     // It's important, that we store the state before restarting!
     // Else, the parent will not respawn a new child and quit.
-    restarting_mgr.on_restart(&mut state)?;
+    //restarting_mgr.on_restart(&mut state)?;
 
     Ok(())
 }
