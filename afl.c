@@ -4,6 +4,7 @@
  */
 #include<stdint.h>
 #include<stdbool.h>
+#include<stdio.h>
 #include<stdlib.h>
 #include<string.h>
 #include<unistd.h>
@@ -37,7 +38,7 @@ static char *fuzz_str;
 unsigned long prev_loc;
 extern bool afl;
 
-
+FILE* flog;
 
 void afl_rewind(void)
 {
@@ -58,6 +59,8 @@ void afl_instrument_location(unsigned long cur_loc)
 
 void afl_setup(void)
 {
+    flog=fopen("/tmp/libkfx.log","w");
+    fprintf(flog, "%s","afl_setup()\n");
     uint32_t status = FS_OPT_ENABLED | FS_OPT_MAPSIZE | FS_OPT_SET_MAPSIZE(MAP_SIZE);
 
     unsigned char tmp[4];
@@ -102,6 +105,7 @@ void afl_setup(void)
 void afl_wait(void)
 {
     unsigned char tmp[4];
+    fprintf(flog, "%s","afl_wait()\n");
     /* Whoops, parent dead? */
     if (read(FORKSRV_FD, tmp, 4) != 4)
     {
@@ -118,6 +122,7 @@ void afl_wait(void)
 void afl_report(bool crash)
 {
     int32_t status = crash ? SIGABRT : 0;
+    fprintf(flog, "%s","afl_report()\n");
     if (write(FORKSRV_FD + 1, &status, 4) != 4)
         afl = false;
 }

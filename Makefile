@@ -21,7 +21,7 @@ fuzzer:
 	cargo build --release
 
 	clang \
-		$(PROJECT_DIR)/harness.cc \
+		$(PROJECT_DIR)/harness.c \
 		-fsanitize=fuzzer \
 		-o $(FUZZER_NAME).o \
 		-v  -c

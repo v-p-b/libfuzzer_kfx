@@ -1,5 +1,5 @@
 #include <stdint.h>
-#include <cstdio>
+#include <stdio.h>
 #include <stdbool.h>
 
 #include "afl.h"
@@ -7,9 +7,10 @@
 bool afl;
 
 
-static int LLVMTestOneInput(const uint8_t* data, size_t size) {
-  //afl_rewind();
-  //afl_wait();
+int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  //afl_setup();
+  afl_rewind();
+  afl_wait();
   if (size < 4) {
     afl_report(false);
     return 0;
@@ -33,6 +34,6 @@ static int LLVMTestOneInput(const uint8_t* data, size_t size) {
   return 0;
 }
 
-static void LLVMFuzzerInitialize(){
+void LLVMFuzzerInitialize(int* argc, char*** argv){
     afl_setup();
 }
