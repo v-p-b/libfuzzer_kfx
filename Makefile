@@ -4,11 +4,13 @@ UNAME := $(shell uname)
 
 all: afl fuzzer
 	clang \
+        $(PROJECT_DIR)/harness.c \
 		-o $(FUZZER_NAME) \
-		-fsanitize=fuzzer \
-		-lm -lz \
-		-L target/release -llibfuzzer_libkfx_dummy \
-		$(FUZZER_NAME).o afl.o
+		-lm -lz -g -O3 \
+        -DFUZZING_BUILD_MODE_UNSAFE_FOR_PRODUCTION=1 \
+        -lrt \
+		-Wl,--whole-archive target/release/liblibfuzzer_libkfx_dummy.a \
+		-Wl,-no-whole-archive -pthread -ldl afl.o
 
 afl: 
 	clang \
@@ -22,11 +24,11 @@ fuzzer:
 
 	clang \
 		$(PROJECT_DIR)/harness.c \
-		-fsanitize=fuzzer \
 		-o $(FUZZER_NAME).o \
-		-v  -c
+		-v -c 
 
 clean:
 	rm ./$(FUZZER_NAME)
 	rm *.o
+	rm -r target
 
