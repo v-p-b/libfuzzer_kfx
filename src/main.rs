@@ -44,8 +44,8 @@ const MAP_SIZE: usize = 65536;
 
 /// The main fn, `no_mangle` as it is a C main
 #[cfg(not(test))]
-#[no_mangle]
-pub fn libafl_main() {
+// #[no_mangle]
+pub fn main(){
     // Registry the metadata types used in this fuzzer
     // Needed only on no_std
     //RegistryBuilder::register::<Tokens>();
@@ -69,6 +69,7 @@ pub fn libafl_main() {
         1337,
     )
     .expect("An error occurred while fuzzing");
+
 }
 
 /// The actual fuzzer
@@ -163,7 +164,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
 
     // A fuzzer with feedbacks and a corpus scheduler
     let mut fuzzer = StdFuzzer::new(scheduler, feedback, objective);
-
+    println!("meh");
     // The wrapped harness function, calling out to the LLVM-style harness
     let mut harness = |input: &BytesInput| {
         let target = input.target_bytes();
@@ -184,7 +185,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
         // 10 seconds timeout
         Duration::new(10, 0),
     );
-
+    println!("args");
     // The actual target run starts here.
     // Call LLVMFUzzerInitialize() if present.
     let args: Vec<String> = env::args().collect();
@@ -192,6 +193,7 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
         println!("Warning: LLVMFuzzerInitialize failed with -1")
     }
 
+    println!("Corpus size: {}", state.corpus().count());
     // In case the corpus is empty (on first run), reset
     if state.corpus().count() < 1 {
         state
