@@ -27,6 +27,7 @@ libafl_targets = { path = "../../libafl_targets/", features = ["sancov_pcguard_h
 libafl_cc = { path = "../../libafl_cc/" }
 mimalloc = { version = "*", default-features = false }
 
-#[lib]
-#name = "libfuzzer_libkfx_dummy"
-#crate-type = ["staticlib"]
+[lib]
+name = "libfuzzer_libkfx_dummy"
+crate-type = ["staticlib"]
+path = "src/lib.rs"
