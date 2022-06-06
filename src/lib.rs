@@ -190,7 +190,8 @@ fn fuzz(corpus_dirs: &[PathBuf], objective_dir: PathBuf, shmem: &mut impl ShMem,
     // Call LLVMFUzzerInitialize() if present.
     let args: Vec<String> = env::args().collect();
     if libfuzzer_initialize(&args) == -1 {
-        println!("Warning: LLVMFuzzerInitialize failed with -1")
+        println!("Warning: LLVMFuzzerInitialize failed with -1");
+        return (Err(Error::ShuttingDown));
     }
 
     println!("Corpus size: {}", state.corpus().count());
