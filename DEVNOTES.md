@@ -49,3 +49,50 @@ The libfuzzer target defines the entry point of the executable, that simply call
 Then why do we see the empty body in the compiled code? As it turns out [ld does not care about weak/strong symbols by default when linking static libraries](https://stackoverflow.com/a/37191811), so we have to use the `--whole-archive` option for proper linking. ( [Here is how to do that with autotools](https://stackoverflow.com/questions/22210903/autotools-and-wl-whole-archive) ) I stumbled upon this quirk before while inspecting the verbose command lines emitted by `cc`, but until this point I couldn't figure out the purpose of it. Now I understand. 
 
 With `cc`, we also get a bunch of common libs (pthread, math, ...) linked - when using a different toolchain, we have to include these explicitly.
+
+### Feedback
+
+Feedack traits are used in two ways: 
+- to mark _interesting inputs_
+- to inform the fuzzer about reached _objectives_
+
+The first function is covered by the HitcountsMapobserver that is capable of monitoring the shared memory region for changes. To test this with IPT I had to modify the testmodule, so that closing in on the desired buffer state would be apparent in the generated corpus, something like:
+
+```
+if (test1[0] == test2[0]){
+  if (test1[1] == test2[1]){
+    // etc... crash inside
+  }
+}
+```
+
+This proved that shmem based coverage works:
+
+```
+% for f in `ls -1t kfx/gencorp/*`; do hd $f;done # trigger pseudocode: memcmp(input+"beef", "nottbeef")
+00000000  6e 6f 74 74 92 74 00 20  74 74 74 74 74 74 0e     |nott.t. tttttt.|
+0000000f
+00000000  6e 6f 74 0e                                       |not.|
+00000004
+00000000  6e 6f 0e                                          |no.|
+00000003
+00000000  6e 0a                                             |n.|
+00000002
+00000000  79 0a                                             |y.|
+00000002
+```
+
+Unfortunately existing observers can't handle when LLVMTestOneInput just returns with a status code indicating a crash, so this will probably need a new Feedback class.
+
+The question is how the (unsafe) function return value can be propagated back through `ExitKind` to the Feedback, so it can register it as a _solution_.
+
+
+
+```
+Executor.run_target() -> Result (Ok(return value))
+StdFuzzer.execute_input() -> exit_kind
+
+
+Feedback.is_interesting(state, manager, &input, observers, exit_kind)
+ExitKind is just an enum! 
+```
