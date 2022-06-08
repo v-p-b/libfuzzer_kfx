@@ -13,13 +13,12 @@ use libafl::{
         rands::StdRand,
         shmem::{ShMem, ShMemProvider, StdShMemProvider},
         tuples::{tuple_list, Merge},
-        AsMutSlice, AsSlice,
+        AsSlice,
     },
     corpus::{
-        Corpus, InMemoryCorpus, IndexesLenTimeMinimizerCorpusScheduler, OnDiskCorpus,
-        PowerQueueCorpusScheduler,
+        Corpus, IndexesLenTimeMinimizerCorpusScheduler, OnDiskCorpus, PowerQueueCorpusScheduler,
     },
-    events::{EventConfig, SimpleEventManager},
+    events::SimpleEventManager,
     executors::{inprocess::InProcessExecutor, ExitKind, TimeoutExecutor},
     feedback_or, feedback_or_fast,
     feedbacks::{CrashFeedback, MapFeedbackState, MaxMapFeedback, TimeFeedback, TimeoutFeedback},
@@ -27,17 +26,16 @@ use libafl::{
     inputs::{BytesInput, HasTargetBytes},
     monitors::MultiMonitor,
     mutators::scheduled::{havoc_mutations, tokens_mutations, StdScheduledMutator},
-    mutators::token_mutations::Tokens,
-    observers::{ConstMapObserver, HitcountsMapObserver, StdMapObserver, TimeObserver},
+    observers::{ConstMapObserver, HitcountsMapObserver, TimeObserver},
     stages::{
         calibrate::CalibrationStage,
         power::{PowerMutationalStage, PowerSchedule},
     },
-    state::{HasCorpus, HasMetadata, StdState},
+    state::{HasCorpus, StdState},
     Error,
 };
 
-use libafl_targets::{libfuzzer_initialize, libfuzzer_test_one_input, EDGES_MAP, MAX_EDGES_NUM};
+use libafl_targets::{libfuzzer_initialize, libfuzzer_test_one_input};
 
 const MAP_SIZE: usize = 65536;
 
@@ -65,7 +63,6 @@ pub fn libafl_main() {
         &[PathBuf::from("./corpus")],
         PathBuf::from("./crashes"),
         &mut shmem,
-        1337,
     )
     .expect("An error occurred while fuzzing");
 }
@@ -75,7 +72,6 @@ fn fuzz(
     corpus_dirs: &[PathBuf],
     objective_dir: PathBuf,
     shmem: &mut impl ShMem,
-    broker_port: u16,
 ) -> Result<(), Error> {
     // 'While the stats are state, they are usually used in the broker - which is likely never restarted
     let monitor = MultiMonitor::new(|s| println!("{}", s));
@@ -196,7 +192,7 @@ fn fuzz(
     let args: Vec<String> = env::args().collect();
     if libfuzzer_initialize(&args) == -1 {
         println!("Warning: LLVMFuzzerInitialize failed with -1");
-        return (Err(Error::ShuttingDown));
+        return Err(Error::ShuttingDown);
     }
 
     println!("Corpus size: {}", state.corpus().count());
