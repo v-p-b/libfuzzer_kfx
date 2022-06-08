@@ -76,24 +76,8 @@ fn fuzz(
     // 'While the stats are state, they are usually used in the broker - which is likely never restarted
     let monitor = MultiMonitor::new(|s| println!("{}", s));
 
-    // The restarting state will spawn the same process again as child, then restarted it each time it crashes.
-    /*let (state, mut restarting_mgr) =
-        match setup_restarting_mgr_std(monitor, broker_port, EventConfig::AlwaysUnique) {
-            Ok(res) => res,
-            Err(err) => match err {
-                Error::ShuttingDown => {
-                    return Ok(());
-                }
-                _ => {
-                    panic!("Failed to setup the restarter: {}", err);
-                }
-            },
-        };
-    */
     let mut event_mgr = SimpleEventManager::new(monitor);
-    // Create an observation channel using the coverage map
-    //let edges = unsafe { &mut EDGES_MAP[0..MAX_EDGES_NUM] };
-    //let edges_observer = HitcountsMapObserver::new(StdMapObserver::new("edges", edges));
+
     let shmem_buf = shmem.as_mut_slice();
 
     // Create an observation channel using the signals map
@@ -126,6 +110,7 @@ fn fuzz(
         StdRand::with_seed(current_nanos()),
         // Corpus that will be evolved, we keep it in memory for performance
         //InMemoryCorpus::new(),
+        // We keep the corups on disk for testing
         OnDiskCorpus::new(PathBuf::from("./gencorp")).unwrap(),
         // Corpus in which we store solutions (crashes in this example),
         // on disk so the user can get them after stopping the fuzzer
@@ -134,19 +119,6 @@ fn fuzz(
         // They are the data related to the feedbacks that you want to persist in the State.
         tuple_list!(feedback_state),
     );
-
-    println!("We're a client, let's fuzz :)");
-
-    // Create a PNG dictionary if not existing
-    /*if state.metadata().get::<Tokens>().is_none() {
-        state.add_metadata(Tokens::from([
-            vec![137, 80, 78, 71, 13, 10, 26, 10], // PNG header
-            "IHDR".as_bytes().to_vec(),
-            "IDAT".as_bytes().to_vec(),
-            "PLTE".as_bytes().to_vec(),
-            "IEND".as_bytes().to_vec(),
-        ]));
-    }*/
 
     // Setup a basic mutator with a mutational stage
 
@@ -168,7 +140,7 @@ fn fuzz(
         let target = input.target_bytes();
         let buf = target.as_slice();
         if libfuzzer_test_one_input(buf) != 0 {
-            ExitKind::Crash
+            ExitKind::Crash // Non-zero return means that VMI detected a sink
         } else {
             ExitKind::Ok
         }
@@ -191,6 +163,7 @@ fn fuzz(
     // Call LLVMFUzzerInitialize() if present.
     let args: Vec<String> = env::args().collect();
     if libfuzzer_initialize(&args) == -1 {
+        // The command line arguments probably weren't acceptable by kfx
         println!("Warning: LLVMFuzzerInitialize failed with -1");
         return Err(Error::ShuttingDown);
     }
@@ -203,7 +176,7 @@ fn fuzz(
             .unwrap_or_else(|_| panic!("Failed to load initial corpus at {:?}", &corpus_dirs));
         println!("We imported {} inputs from disk.", state.corpus().count());
     }
-    println!("Gogogo!");
+
     // This fuzzer restarts after 1 mio `fuzz_one` executions.
     // Each fuzz_one will internally do many executions of the target.
     // If your target is very instable, setting a low count here may help.
@@ -216,10 +189,6 @@ fn fuzz(
         &mut event_mgr,
         iters,
     )?;
-
-    // It's important, that we store the state before restarting!
-    // Else, the parent will not respawn a new child and quit.
-    //restarting_mgr.on_restart(&mut state)?;
 
     Ok(())
 }
