@@ -82,17 +82,5 @@ This proved that shmem based coverage works:
 00000002
 ```
 
-Unfortunately existing observers can't handle when LLVMTestOneInput just returns with a status code indicating a crash, so this will probably need a new Feedback class.
+Detecting objectives: the harness function can be used to check the return value of the `libfuzzer_test_one_input()` wrapper and return the appropriate `ExitKind` based on it. This can be detected by `CrashFeedback`. 
 
-The question is how the (unsafe) function return value can be propagated back through `ExitKind` to the Feedback, so it can register it as a _solution_.
-
-
-
-```
-Executor.run_target() -> Result (Ok(return value))
-StdFuzzer.execute_input() -> exit_kind
-
-
-Feedback.is_interesting(state, manager, &input, observers, exit_kind)
-ExitKind is just an enum! 
-```
