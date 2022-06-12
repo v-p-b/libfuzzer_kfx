@@ -11,6 +11,8 @@ Clone this to the `fuzzers` directory of LibAFL!
 Download the appropriate KF/x branch as submodule:
 
 ```
+cd libfuzzer_kfx/
+
 git submodule init
 git submodule update
 ```
@@ -18,7 +20,6 @@ git submodule update
 Build the wrapper with Cargo: 
 
 ```
-cd libfuzzer_kfx/
 cargo build --release
 ```
 
