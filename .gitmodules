@@ -1,0 +1,4 @@
+[submodule "kfx"]
+	path = kfx
+	url = https://github.com/v-p-b/kernel-fuzzer-for-xen-project
+	branch = libkfx
