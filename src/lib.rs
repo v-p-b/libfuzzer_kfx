@@ -39,6 +39,11 @@ use libafl_targets::{libfuzzer_initialize, libfuzzer_test_one_input};
 
 const MAP_SIZE: usize = 65536;
 
+extern "C" {
+    fn kfx_teardown();
+}
+
+
 /// The main fn, `no_mangle` as it is a C main
 #[cfg(not(test))]
 #[no_mangle]
@@ -182,6 +187,7 @@ fn fuzz(
     // If your target is very instable, setting a low count here may help.
     // However, you will lose a lot of performance that way.
     let iters = 1_000_000;
+
     fuzzer.fuzz_loop_for(
         &mut stages,
         &mut executor,
@@ -189,6 +195,8 @@ fn fuzz(
         &mut event_mgr,
         iters,
     )?;
+
+    unsafe { kfx_teardown(); }
 
     Ok(())
 }
