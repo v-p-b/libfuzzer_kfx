@@ -28,7 +28,9 @@ On the C side, we can easily conform the LibFuzzer target, exposing the `LLVMFuz
 
 At LibAFL, we have to create a Rust library, that implements `libafl_main`, and uses `libfuzzer_initialize` and `libfuzzer_test_one_input` wrappers of the `libfuzzer_target` crate for fuzzing. This library will connect together our C code with the "LEGO bricks" provided by LibAFL to create something useful.  
 
-![Morzsi, the electronics-LEGO hybrid t-rex of our family](img/morzsi.jpg)
+<p align="center">
+  <img alt="Morzsi, the electronics-LEGO hybrid t-rex of our family" src="https://raw.githubusercontent.com/v-p-b/libfuzzer_kfx/main/img/morzsi.jpg">
+</p>
 
 ### Replacing the Build Toolchain
 
