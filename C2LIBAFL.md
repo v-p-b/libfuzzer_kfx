@@ -4,9 +4,9 @@ C Harness to LibAFL
 This project was a good exercise in integrating existing C code with LibAFL.
 
 Here's the base setting:
-* KF/x is a relatively complex C project with its own build toolchain. We don't want to rewrite either the existing code or the toolchain.
+* [KF/x](https://github.com/intel/kernel-fuzzer-for-xen-project) is a relatively complex C project with its own build toolchain. We don't want to rewrite either the existing code or the toolchain.
 * KF/x is capable of executing fuzz iterations, measure code coverage and detect objectives (crashes). We want to make these capabilities available for LibAFL.
-* We want to use the modular input generation (and potentially other) features of LibAFL.
+* We want to use the modular input generation (and potentially other) features of [LibAFL](https://github.com/AFLplusplus/LibAFL).
 
 This repo (and the linked KF/x branch) contains concrete code examples of the implementation details described here.
 
