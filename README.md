@@ -32,5 +32,9 @@ autoreconf -vif
 make -j4
 ```
 
+Execute:
+
+`./kfx --domain debian --json /path/to/debian.json --address 0xffffffffdeadbeef --input-limit 9 -A -t`
+
 `./kfx -h` and the [KF/x](https://github.com/intel/kernel-fuzzer-for-xen-project) repo provides further information about running.
 
