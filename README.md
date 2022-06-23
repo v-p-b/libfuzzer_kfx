@@ -3,6 +3,8 @@ libfuzzer\_kfx
 
 [LibAFL](https://github.com/AFLplusplus/LibAFL) wrapper for [KF/x](https://github.com/intel/kernel-fuzzer-for-xen-project) based on the libfuzzer target.
 
+Code in this repo is in large part based on LibAFL's [libfuzzer_libpng](https://github.com/AFLplusplus/LibAFL/tree/main/fuzzers/libfuzzer_libpng) fuzzer.
+
 Building and Usage
 ------------------
 
